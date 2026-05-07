@@ -7,7 +7,7 @@ import { db, auth, googleProvider } from './firebaseConfig';
 import {
   collection, addDoc, query, orderBy, onSnapshot,
   serverTimestamp, limit, startAfter, getDocs,
-  doc, updateDoc, arrayUnion, arrayRemove, getDoc
+  doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc
 } from 'firebase/firestore';
 import {
   signInWithPopup, onAuthStateChanged, signOut,
@@ -19,6 +19,7 @@ import SettingsModal, { loadSettings, saveSettings } from './Settings';
 import './App.css';
 
 const PAGE_SIZE = 20;
+
 
 // ── Utils ─────────────────────────────────────────────
 function formatDate(ts) {
@@ -138,9 +139,25 @@ function ProfileDropdown({ user, profile, onSave, onLogout, onClose }) {
 }
 
 // ── ASCII Card ────────────────────────────────────────
-function AsciiCard({ art, onOpen, onStar, onCopy, onShare, starred, settings = {}, isSelected }) {
+function AsciiCard({ 
+  art, 
+  onOpen, 
+  onStar, 
+  onCopy, 
+  onShare,
+  onEdit, 
+  onDelete, // <--- Nueva
+  starred, 
+  settings = {}, 
+  isSelected, 
+  currentUser // <--- Nueva
+}) {
   const name  = art.authorNickname || art.author;
   const photo = art.authorHidePhoto ? null : (art.authorCustomPhoto || art.authorPhoto);
+  
+  // Comprobamos si el que está logueado es el dueño del ASCII
+  const isOwner = currentUser?.uid === art.authorUid;
+  
   return (
     <div
       className={`ascii-card${settings.compactCards ? ' compact' : ''}${isSelected ? ' is-selected' : ''}`}
@@ -152,17 +169,60 @@ function AsciiCard({ art, onOpen, onStar, onCopy, onShare, starred, settings = {
         <span className="card-author-date">{formatDate(art.createdAt)}</span>
         {(art.stars || 0) > 0 && <span className="star-count">⭐ {art.stars}</span>}
       </div>
+
       <div className="ascii-box">
         <pre style={settings.monoColor ? { color: '#e2e8f0' } : {}}>{art.content}</pre>
       </div>
+
       <div className="card-bottom" onClick={e => e.stopPropagation()}>
         <div className="card-tags">
-          {art.tags?.filter(Boolean).map((t, i) => <span key={i} className="tag">#{t}</span>)}
+          {art.tags?.filter(Boolean).map((t, i) => (
+            <span key={i} className="tag">#{t}</span>
+          ))}
         </div>
+
         <div className="card-actions">
-          <button className={`btn-icon${starred ? ' star-active' : ''}`} title="Recomendar" onClick={() => onStar(art)}>⭐</button>
-          <button className="btn-icon" title="Compartir" onClick={() => onShare(art)}>🔗</button>
-          <button className="btn-copy-card" onClick={() => onCopy(art.content)}>Copiar</button>
+          {/* BOTÓN DE BORRAR: Solo para el autor */}
+          {isOwner && (
+            <>
+              <button 
+                className="btn-icon edit-btn" 
+                title="Editar"
+                onClick={() => onEdit(art)}
+              >
+                ✏️
+              </button>
+              <button 
+                className="btn-icon delete-btn" 
+                onClick={() => onDelete(art.id, art.authorUid)}
+              >
+                🗑️
+              </button>
+            </>
+          )}
+
+          <button 
+            className={`btn-icon${starred ? ' star-active' : ''}`} 
+            title="Recomendar" 
+            onClick={() => onStar(art)}
+          >
+            ⭐
+          </button>
+          
+          <button 
+            className="btn-icon" 
+            title="Compartir" 
+            onClick={() => onShare(art)}
+          >
+            🔗
+          </button>
+
+          <button 
+            className="btn-copy-card" 
+            onClick={() => onCopy(art.content)}
+          >
+            Copiar
+          </button>
         </div>
       </div>
     </div>
@@ -304,6 +364,15 @@ function Sidebar({ view, onView, user, artes, starred, onOpenArt, onUnstar, onOp
 //   MAIN APP
 // ══════════════════════════════════════════════════════
 export default function App() {
+  const [editingId, setEditingId] = useState(null); // Nuevo estado
+
+  const handleEditClick = (art) => {
+    setEditingId(art.id);
+    setAscii(art.content);
+    setTags(art.tags.join(', '));
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube al formulario
+  };
+
   const [user, setUser]                       = useState(null);
   const [profile, setProfile]                 = useState({ nickname: '', hideName: false, hidePhoto: false, customPhotoUrl: '' });
   const [showLogin, setShowLogin]             = useState(false);
@@ -371,25 +440,49 @@ export default function App() {
     setHasMore(snap.docs.length === PAGE_SIZE);
   };
 
+  const handleDelete = async (id, authorId) => {
+    // Verificación básica de seguridad en el cliente
+    if (auth.currentUser?.uid !== authorId) {
+      setToast("¡No puedes borrar lo que no es tuyo! ツ");
+      return;
+    }
+
+    if (window.confirm("¿Seguro que quieres borrar este pedazo de arte?")) {
+      try {
+        await deleteDoc(doc(db, "artes", id));
+        setToast("Post eliminado. ¡Puff! 💨");
+        // Si el panel está abierto con este post, ciérralo
+        if (selectedArt?.id === id) setPanelOpen(false);
+      } catch (err) {
+        console.error(err);
+        setToast("Error al borrar... Firebase dijo que no.");
+      }
+    }
+  };
+
   const handlePost = async e => {
     e.preventDefault();
     if (!ascii.trim()) return;
+
     try {
-      await addDoc(collection(db, 'artes'), {
-        content: ascii,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        author: profile.nickname || user.displayName,
-        authorPhoto: user.photoURL || '',
-        authorHidePhoto: profile.hidePhoto,
-        authorCustomPhoto: profile.customPhotoUrl || '',
-        authorNickname: profile.nickname || '',
-        authorUid: user.uid,
-        stars: 0, starredBy: [],
-        createdAt: serverTimestamp(),
-      });
-      setAscii(''); setTags('');
-      showToast('¡ASCII publicado! 🎉');
-    } catch (e) { alert('Error: ' + e.message); }
+      if (editingId) {
+        const artRef = doc(db, 'artes', editingId);
+        await updateDoc(artRef, {
+          content: ascii,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        });
+        
+        // --- ESTO ES LO QUE CIERRA TODO ---
+        setEditingId(null); 
+        setAscii('');
+        setTags('');
+        setToast("¡Cambios guardados! ツ");
+      } else {
+        // ... tu código de addDoc para posts nuevos ...
+      }
+    } catch (err) {
+      setToast("Error al guardar");
+    }
   };
 
   const handleGoogle         = async () => { try { await signInWithPopup(auth, googleProvider); setShowLogin(false); } catch (e) { alert(e.message); } };
@@ -505,20 +598,47 @@ export default function App() {
           <main className="main-content">
             <div className="hero">
               <h1 className="hero-title">iThyMag</h1>
-              <p className="hero-sub">The HappY MAc Gallery — ASCII con Unicode real 🖥️</p>
+              <p className="hero-sub">                   The HappY MAc Gallery </p>
+              <p className="hero-sub"> Ascii library </p>
             </div>
 
             {user ? (
               <form className="post-form" onSubmit={handlePost}>
-                <span className="form-label">Nuevo ASCII</span>
-                <textarea className="post-textarea" rows={9} spellCheck={false}
-                  placeholder={`  _________\n | _______ |\n | |' ⅃ '| |\n | |  ◡  | |\n | ------- |\n |      _  |\n -----------\n  |       |\n  ---------`}
-                  value={ascii} onChange={e => setAscii(e.target.value)} />
-                <div className="form-row">
-                  <input className="tags-input" placeholder="Tags opcionales: retro, apple, art"
-                    value={tags} onChange={e => setTags(e.target.value)} />
-                  <button type="submit" className="submit-btn">Publicar</button>
-                </div>
+                  <span className="form-label">{editingId ? 'Editando su obra' : 'Nuevo ASCII'}</span>
+                  <textarea 
+                    className="post-textarea" 
+                    rows={9} 
+                    spellCheck={false}
+                    placeholder={`  _________\n | _______ |\n | |' ⅃ '| |\n | |  ◡  | |\n | ------- |\n |      _  |\n -----------\n  |       |\n  ---------`}
+                    value={ascii} 
+                    onChange={e => setAscii(e.target.value)} 
+                  />
+                  <div className="form-row">
+                    <input 
+                      className="tags-input" 
+                      placeholder="Tags opcionales: retro, apple, art"
+                      value={tags} 
+                      onChange={e => setTags(e.target.value)} 
+                    />
+                    
+                    {/* AQUÍ VAN LOS BOTONES DINÁMICOS */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button type="submit" className="submit-btn">
+                        {editingId ? 'Guardar Cambios' : 'Publicar'}
+                      </button>
+                      
+                      {editingId && (
+                        <button 
+                          type="button" // Importante que sea type="button" para que no haga submit
+                          onClick={() => { setEditingId(null); setAscii(''); setTags(''); }} 
+                          className="cancel-btn"
+                          style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </div>
               </form>
             ) : (
               <div className="empty-state">
@@ -536,12 +656,19 @@ export default function App() {
             ) : (
               <div className={`gallery${panelOpen ? ' panel-open' : ''}${settings.compactCards ? ' gallery-compact' : ''}`}>
                 {filtered.map(art => (
-                  <AsciiCard key={art.id} art={art}
-                    onOpen={openPanel} onStar={handleStar}
-                    onCopy={handleCopy} onShare={handleShare}
+                  <AsciiCard 
+                    key={art.id} 
+                    art={art}
+                    onOpen={openPanel} 
+                    onStar={handleStar}
+                    onCopy={handleCopy} 
+                    onShare={handleShare}
+                    onEdit={handleEditClick}
+                    onDelete={handleDelete} // <--- Ahora sí pasas la función
                     starred={starred.includes(art.id)}
                     settings={settings}
                     isSelected={panelOpen && selectedArt?.id === art.id}
+                    currentUser={user} // <--- Pasas el usuario para la lógica
                   />
                 ))}
               </div>
