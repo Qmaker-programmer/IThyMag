@@ -435,6 +435,59 @@ input, textarea { font-family: var(--font-ui); }
   width: 420px;
 }
 
+/* Media Query para teléfonos */
+/* Contenedor de acciones en la tarjeta */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap; /* Para que si no caben, bajen a la siguiente línea en vez de romperse */
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilo específico para borrar (toque Linux/Danger) */
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+/* Ajustes para móvil */
+@media (max-width: 600px) {
+  .ascii-card {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .card-bottom {
+    flex-direction: column; /* Tags arriba, botones abajo */
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .card-actions {
+    width: 100%;
+    justify-content: space-between; /* Espacia los botones en todo el ancho */
+  }
+
+  .btn-copy-card {
+    flex-grow: 1; /* El botón de copiar se estira para ser más fácil de tocar */
+    text-align: center;
+  }
+}
+
+
+
 .detail-panel {
   width: 420px;
   height: 100%;
