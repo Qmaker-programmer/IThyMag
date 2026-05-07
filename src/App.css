@@ -565,6 +565,43 @@ input, textarea { font-family: var(--font-ui); }
   }
 }
 
+@media (max-width: 768px) {
+  .sidebar {
+    /* Posicionamiento arriba o abajo según prefieras, 
+       pero lo importante es el scroll */
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: row; /* Elementos uno al lado del otro */
+    overflow-x: auto;    /* ¡MÁGIA! Habilita el scroll horizontal */
+    overflow-y: hidden;  /* Evita el scroll vertical en la barra */
+    padding: 10px 15px;
+    gap: 15px;           /* Espacio entre los items */
+    
+    /* Scroll suave y ocultar barra de scroll para un look más limpio */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  /* Los elementos dentro de la sidebar (Autores, Nav, etc.) */
+  .sidebar-nav, .authors-list {
+    display: flex;
+    flex-direction: row; /* Todo en una línea */
+    align-items: center;
+    white-space: nowrap; /* Evita que los nombres de autores salten de línea */
+  }
+
+  /* Ajuste para los items individuales */
+  .sidebar-item, .author-item {
+    flex: 0 0 auto; /* Importante: evita que los items se encojan */
+  }
+}
+
 .panel-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .panel-actions { display: flex; gap: 8px; }
 .btn-panel-copy {
