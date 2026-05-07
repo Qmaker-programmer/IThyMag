@@ -1,0 +1,47 @@
+# ── Logs (Rastros de errores) ──
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Dependencias (El agujero negro) ──
+node_modules/
+/jspm_packages/
+
+# ── Compilación (Vite genera esto, no lo queremos en Git) ──
+dist/
+dist-ssr/
+*.local
+
+# ── Firebase (Configuraciones temporales y logs) ──
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+pubsub-debug.log*
+ui-debug.log*
+
+# ── SECRETOS (¡CRÍTICO! Nunca subas tus llaves) ──
+.env
+.env*.local
+# Si usas service accounts de Firebase en local
+*-firebase-adminsdk-*.json
+
+# ── Directorios de Editor (Limpieza total) ──
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Archivos temporales de Vim/Nano
+*~
+*.swp
+
+# ── Testing ──
+/coverage/
