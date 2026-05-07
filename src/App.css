@@ -376,8 +376,14 @@ input, textarea { font-family: var(--font-ui); }
   border-radius: 10px; padding: 14px; overflow-x: auto;
 }
 .ascii-box pre {
-  font-family: var(--font-mono); font-size: 13px; line-height: 1.25;
-  white-space: pre; color: #e2e8f0; margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: pre;
+  color: #e2e8f0;
+  margin: 0;
+  /* El secreto de la robustez móvil */
+  overflow-x: auto; 
 }
 
 /* Card bottom */
@@ -433,46 +439,6 @@ input, textarea { font-family: var(--font-ui); }
 
 .detail-panel-wrap.open {
   width: 420px;
-}
-
-/* Media Query para teléfonos */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column; /* La barra ya no va al lado, sino arriba */
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    padding: 10px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(10, 10, 10, 0.95);
-    backdrop-filter: blur(10px);
-  }
-
-  /* Hacemos que los elementos de la sidebar se pongan en fila */
-  .sidebar-nav {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-  }
-
-  .main-content {
-    padding: 10px;
-    width: 100%;
-  }
-
-  /* Ajuste para que el ASCII no se rompa */
-  pre {
-    font-size: 10px; /* Reducimos un poco el texto en móvil */
-    overflow-x: auto; /* Permitimos scroll horizontal si el ASCII es muy ancho */
-    white-space: pre; /* Mantenemos el formato original */
-  }
 }
 
 
@@ -531,74 +497,89 @@ input, textarea { font-family: var(--font-ui); }
   scrollbar-color: var(--accent) transparent;
 }
 
-/* Ajuste fino para pantallas muy pequeñas (iPhone SE, etc.) */
-@media (max-width: 480px) {
-  .panel-ascii-box pre {
-    font-size: 11px;      /* Reducimos un poco para que quepa más arte sin scroll */
-    line-height: 1.1;
-  }
-}
-
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN — EL FIX DEFINITIVO 1.0
+   ════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .app-layout {
-    display: flex;
-    flex-direction: column; /* Cambia de lado a arriba/abajo */
+  /* Evitamos que el cuerpo se desborde a la derecha */
+  body, .app, .app-inner {
+    overflow-x: hidden;
+    width: 100%;
   }
 
+  /* Cambiamos el layout a vertical */
+  .body-layout {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* LA SIDEBAR: Ahora es una cinta horizontal superior */
   .sidebar {
-    position: fixed;
-    bottom: 0; /* La ponemos abajo como las apps modernas */
+    position: sticky;
+    top: 64px; /* Justo debajo del header */
     left: 0;
-    width: 100%;
-    height: 60px;
-    flex-direction: row;
-    z-index: 1000;
-    background: #0a0a0a;
-    border-top: 1px solid var(--border);
+    width: 100% !important;
+    height: auto !important;
+    max-height: 80px;
+    flex-direction: row !important;
     border-right: none;
-    padding: 0 20px;
-  }
-
-  .main-content {
-    margin-bottom: 70px; /* Espacio para que la barra no tape el último post */
+    border-bottom: 1px solid var(--border);
     padding: 10px;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    /* Posicionamiento arriba o abajo según prefieras, 
-       pero lo importante es el scroll */
-    width: 100%;
-    height: auto;
-    display: flex;
-    flex-direction: row; /* Elementos uno al lado del otro */
-    overflow-x: auto;    /* ¡MÁGIA! Habilita el scroll horizontal */
-    overflow-y: hidden;  /* Evita el scroll vertical en la barra */
-    padding: 10px 15px;
-    gap: 15px;           /* Espacio entre los items */
+    z-index: 100;
     
-    /* Scroll suave y ocultar barra de scroll para un look más limpio */
-    scroll-behavior: smooth;
+    /* Habilitamos el scroll horizontal */
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    display: flex !important;
+    gap: 15px;
+    scrollbar-width: none; /* Oculta scroll en Firefox */
   }
 
-  .sidebar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+  .sidebar::-webkit-scrollbar { display: none; } /* Oculta scroll en Chrome */
+
+  /* Forzamos a que los hijos de la sidebar se alineen horizontalmente */
+  .sidebar-nav, .sidebar-content, .sidebar-section, .authors-list {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px;
+    padding: 0;
+    border: none;
   }
 
-  /* Los elementos dentro de la sidebar (Autores, Nav, etc.) */
-  .sidebar-nav, .authors-list {
-    display: flex;
-    flex-direction: row; /* Todo en una línea */
-    align-items: center;
-    white-space: nowrap; /* Evita que los nombres de autores salten de línea */
+  /* Evita que los botones se achiquen */
+  .sidebar-btn, .author-row, .mini-card {
+    flex: 0 0 auto !important;
+    margin: 0;
+    transform: none !important; /* Quitamos el translateX del hover que rompe el scroll */
   }
 
-  /* Ajuste para los items individuales */
-  .sidebar-item, .author-item {
-    flex: 0 0 auto; /* Importante: evita que los items se encojan */
+  .sidebar-section-title { display: none; } /* Ocultamos títulos para ganar espacio */
+
+  /* CONTENIDO PRINCIPAL */
+  .main-content {
+    width: 100% !important;
+    padding: 1rem 10px !important;
+    margin: 0 !important;
+  }
+
+  /* AJUSTE PANEL DE DETALLES (Se vuelve pantalla completa) */
+  .detail-panel-wrap.open {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 2000;
+  }
+  .detail-panel {
+    width: 100%;
+    transform: translateY(100%); /* Sale de abajo */
+  }
+  .detail-panel-wrap.open .detail-panel {
+    transform: translateY(0);
   }
 }
 
