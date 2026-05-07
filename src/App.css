@@ -436,53 +436,42 @@ input, textarea { font-family: var(--font-ui); }
 }
 
 /* Media Query para teléfonos */
-/* Contenedor de acciones en la tarjeta */
-.card-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap; /* Para que si no caben, bajen a la siguiente línea en vez de romperse */
-}
-
-.btn-icon {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Estilo específico para borrar (toque Linux/Danger) */
-.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-}
-
-/* Ajustes para móvil */
-@media (max-width: 600px) {
-  .ascii-card {
-    padding: 12px;
-    margin-bottom: 15px;
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column; /* La barra ya no va al lado, sino arriba */
   }
 
-  .card-bottom {
-    flex-direction: column; /* Tags arriba, botones abajo */
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .card-actions {
+  .sidebar {
     width: 100%;
-    justify-content: space-between; /* Espacia los botones en todo el ancho */
+    height: auto;
+    padding: 10px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
   }
 
-  .btn-copy-card {
-    flex-grow: 1; /* El botón de copiar se estira para ser más fácil de tocar */
-    text-align: center;
+  /* Hacemos que los elementos de la sidebar se pongan en fila */
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .main-content {
+    padding: 10px;
+    width: 100%;
+  }
+
+  /* Ajuste para que el ASCII no se rompa */
+  pre {
+    font-size: 10px; /* Reducimos un poco el texto en móvil */
+    overflow-x: auto; /* Permitimos scroll horizontal si el ASCII es muy ancho */
+    white-space: pre; /* Mantenemos el formato original */
   }
 }
 
@@ -526,9 +515,56 @@ input, textarea { font-family: var(--font-ui); }
   border-radius: 12px; padding: 20px; overflow-x: auto; flex: 1;
 }
 .panel-ascii-box pre {
-  font-family: var(--font-mono); font-size: 14px; line-height: 1.3;
-  white-space: pre; color: #e2e8f0; margin: 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.2; /* Un poco más apretado para que el ASCII sea más denso */
+  white-space: pre; 
+  color: #e2e8f0;
+  margin: 0;
+  
+  /* --- MEJORAS PARA MÓVIL --- */
+  overflow-x: auto;       /* Permite scroll horizontal si el ASCII es muy ancho */
+  overflow-y: hidden;     /* Evita scrolls verticales raros dentro de la caja */
+  padding: 10px;          /* Espacio para que el arte no toque los bordes */
+  background: #000;       /* Fondo negro sólido para máximo contraste */
+  scrollbar-width: thin;  /* Scrollbar discreto en Firefox */
+  scrollbar-color: var(--accent) transparent;
 }
+
+/* Ajuste fino para pantallas muy pequeñas (iPhone SE, etc.) */
+@media (max-width: 480px) {
+  .panel-ascii-box pre {
+    font-size: 11px;      /* Reducimos un poco para que quepa más arte sin scroll */
+    line-height: 1.1;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    display: flex;
+    flex-direction: column; /* Cambia de lado a arriba/abajo */
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0; /* La ponemos abajo como las apps modernas */
+    left: 0;
+    width: 100%;
+    height: 60px;
+    flex-direction: row;
+    z-index: 1000;
+    background: #0a0a0a;
+    border-top: 1px solid var(--border);
+    border-right: none;
+    padding: 0 20px;
+  }
+
+  .main-content {
+    margin-bottom: 70px; /* Espacio para que la barra no tape el último post */
+    padding: 10px;
+  }
+}
+
 .panel-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .panel-actions { display: flex; gap: 8px; }
 .btn-panel-copy {
