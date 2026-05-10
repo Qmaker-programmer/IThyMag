@@ -1,6 +1,6 @@
 // ================================================
 //   iThyMag — App.jsx  ¡VIVA EL ASCII ART! 🎨
-//   Push panel · Spring animations · Settings fix
+//   Push panel · Spring animations · Edit/Delete propios ✏️🗑️
 // ================================================
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { db, auth, googleProvider } from './firebaseConfig';
@@ -19,7 +19,6 @@ import SettingsModal, { loadSettings, saveSettings } from './Settings';
 import './App.css';
 
 const PAGE_SIZE = 20;
-
 
 // ── Utils ─────────────────────────────────────────────
 function formatDate(ts) {
@@ -49,6 +48,22 @@ function Avatar({ photo, name, size = 32 }) {
 // ── Toast ─────────────────────────────────────────────
 function Toast({ msg }) {
   return <div className={`toast${msg ? ' show' : ''}`}>{msg}</div>;
+}
+
+// ── Confirm Dialog ────────────────────────────────────
+function ConfirmDialog({ msg, onConfirm, onCancel }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal" style={{ width: 320, textAlign: 'center', gap: 16, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontSize: '2rem' }}>🗑️</div>
+        <p style={{ fontSize: '0.92rem', color: 'var(--text)' }}>{msg}</p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button className="btn-logout" onClick={onConfirm} style={{ flex: 1 }}>Sí, borrar</button>
+          <button className="btn-save-profile" onClick={onCancel} style={{ flex: 1 }}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── Login Modal ───────────────────────────────────────
@@ -138,26 +153,31 @@ function ProfileDropdown({ user, profile, onSave, onLogout, onClose }) {
   );
 }
 
+// ── Helpers: resuelven foto/nombre usando perfil ACTUAL del usuario ──
+// Si el post es tuyo, usa tu perfil en vivo (no el snapshot de Firestore)
+function resolveAuthorPhoto(art, currentUser, currentProfile) {
+  if (currentUser && currentUser.uid === art.authorUid) {
+    if ((currentProfile || {}).hidePhoto) return null;
+    return (currentProfile || {}).customPhotoUrl || currentUser.photoURL || null;
+  }
+  return art.authorHidePhoto ? null : (art.authorCustomPhoto || art.authorPhoto);
+}
+
+function resolveAuthorName(art, currentUser, currentProfile) {
+  if (currentUser && currentUser.uid === art.authorUid) {
+    const p = currentProfile || {};
+    if (p.hideName) return p.nickname || 'Anón';
+    return p.nickname || art.authorNickname || art.author;
+  }
+  return art.authorNickname || art.author;
+}
+
 // ── ASCII Card ────────────────────────────────────────
-function AsciiCard({ 
-  art, 
-  onOpen, 
-  onStar, 
-  onCopy, 
-  onShare,
-  onEdit, 
-  onDelete, // <--- Nueva
-  starred, 
-  settings = {}, 
-  isSelected, 
-  currentUser // <--- Nueva
-}) {
-  const name  = art.authorNickname || art.author;
-  const photo = art.authorHidePhoto ? null : (art.authorCustomPhoto || art.authorPhoto);
-  
-  // Comprobamos si el que está logueado es el dueño del ASCII
-  const isOwner = currentUser?.uid === art.authorUid;
-  
+function AsciiCard({ art, onOpen, onStar, onCopy, onShare, starred, settings = {}, isSelected, currentUser, currentProfile, onEdit, onDelete }) {
+  const name  = resolveAuthorName(art, currentUser, currentProfile);
+  const photo = resolveAuthorPhoto(art, currentUser, currentProfile);
+  const isOwner = currentUser && currentUser.uid === art.authorUid;
+
   return (
     <div
       className={`ascii-card${settings.compactCards ? ' compact' : ''}${isSelected ? ' is-selected' : ''}`}
@@ -168,61 +188,80 @@ function AsciiCard({
         <span className="card-author-name">@{name}</span>
         <span className="card-author-date">{formatDate(art.createdAt)}</span>
         {(art.stars || 0) > 0 && <span className="star-count">⭐ {art.stars}</span>}
+        {isOwner && <span className="owner-badge">tuyo ✨</span>}
       </div>
-
       <div className="ascii-box">
         <pre style={settings.monoColor ? { color: '#e2e8f0' } : {}}>{art.content}</pre>
       </div>
-
       <div className="card-bottom" onClick={e => e.stopPropagation()}>
         <div className="card-tags">
-          {art.tags?.filter(Boolean).map((t, i) => (
-            <span key={i} className="tag">#{t}</span>
-          ))}
+          {art.tags?.filter(Boolean).map((t, i) => <span key={i} className="tag">#{t}</span>)}
         </div>
-
         <div className="card-actions">
-          {/* BOTÓN DE BORRAR: Solo para el autor */}
-          {isOwner && (
-            <>
-              <button 
-                className="btn-icon edit-btn" 
-                title="Editar"
-                onClick={() => onEdit(art)}
-              >
-                ✏️
-              </button>
-              <button 
-                className="btn-icon delete-btn" 
-                onClick={() => onDelete(art.id, art.authorUid)}
-              >
-                🗑️
-              </button>
-            </>
-          )}
+          {isOwner && <>
+            <button className="btn-icon btn-edit" title="Editar" onClick={e => { e.stopPropagation(); onEdit(art); }}>✏️</button>
+            <button className="btn-icon btn-delete" title="Borrar" onClick={e => { e.stopPropagation(); onDelete(art); }}>🗑️</button>
+          </>}
+          <button className={`btn-icon${starred ? ' star-active' : ''}`} title="Recomendar" onClick={() => onStar(art)}>⭐</button>
+          <button className="btn-icon" title="Compartir" onClick={() => onShare(art)}>🔗</button>
+          <button className="btn-copy-card" onClick={() => onCopy(art.content)}>Copiar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-          <button 
-            className={`btn-icon${starred ? ' star-active' : ''}`} 
-            title="Recomendar" 
-            onClick={() => onStar(art)}
-          >
-            ⭐
-          </button>
-          
-          <button 
-            className="btn-icon" 
-            title="Compartir" 
-            onClick={() => onShare(art)}
-          >
-            🔗
-          </button>
+// ── Edit Modal ────────────────────────────────────────
+function EditModal({ art, onSave, onClose }) {
+  const [content, setContent] = useState(art.content);
+  const [tags, setTags] = useState((art.tags || []).join(', '));
+  const [saving, setSaving] = useState(false);
 
-          <button 
-            className="btn-copy-card" 
-            onClick={() => onCopy(art.content)}
-          >
-            Copiar
+  const handleSave = async () => {
+    if (!content.trim()) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'artes', art.id), {
+        content: content,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      });
+      onSave();
+    } catch (e) {
+      alert('Error al guardar: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ width: 520, maxWidth: '96vw' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <div className="modal-logo" style={{ fontSize: '1.3rem', textAlign: 'left', marginBottom: 0 }}>✏️ Editar ASCII</div>
+          <button className="panel-close" onClick={onClose}>✕</button>
+        </div>
+        <span className="form-label">ASCII</span>
+        <textarea
+          className="post-textarea"
+          rows={10}
+          spellCheck={false}
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          style={{ marginTop: 8, marginBottom: 12 }}
+        />
+        <span className="form-label">Tags</span>
+        <input
+          className="tags-input"
+          placeholder="retro, apple, art"
+          value={tags}
+          onChange={e => setTags(e.target.value)}
+          style={{ width: '100%', marginTop: 8, marginBottom: 18 }}
+        />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn-save-profile" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+            {saving ? 'Guardando…' : 'Guardar cambios ✅'}
           </button>
+          <button className="btn-logout" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -230,9 +269,11 @@ function AsciiCard({
 }
 
 // ── Detail Panel (PUSH, no overlay) ──────────────────
-function DetailPanel({ art, open, onClose, onStar, onCopy, onShare, starred }) {
-  const name  = art ? (art.authorNickname || art.author) : '';
-  const photo = art ? (art.authorHidePhoto ? null : (art.authorCustomPhoto || art.authorPhoto)) : null;
+function DetailPanel({ art, open, onClose, onStar, onCopy, onShare, starred, currentUser, currentProfile, onEdit, onDelete }) {
+  const name  = art ? resolveAuthorName(art, currentUser, currentProfile) : '';
+  const photo = art ? resolveAuthorPhoto(art, currentUser, currentProfile) : null;
+  const isOwner = currentUser && art && currentUser.uid === art.authorUid;
+
   return (
     <div className={`detail-panel-wrap${open ? ' open' : ''}`}>
       <div className="detail-panel">
@@ -255,6 +296,13 @@ function DetailPanel({ art, open, onClose, onStar, onCopy, onShare, starred }) {
             <button className="btn-panel-share" onClick={() => onShare(art)}>Compartir 🔗</button>
             <button className={`btn-panel-star${starred ? ' active' : ''}`} onClick={() => onStar(art)}>⭐</button>
           </div>
+          {/* Botones de propietario */}
+          {isOwner && (
+            <div className="panel-owner-actions">
+              <button className="btn-panel-edit" onClick={() => onEdit(art)}>✏️ Editar</button>
+              <button className="btn-panel-delete" onClick={() => onDelete(art)}>🗑️ Borrar</button>
+            </div>
+          )}
         </>}
       </div>
     </div>
@@ -298,7 +346,6 @@ function Sidebar({ view, onView, user, artes, starred, onOpenArt, onUnstar, onOp
       </nav>
 
       <div className="sidebar-content">
-        {/* TOP POSTS */}
         {view === 'feed' && (
           <div className="sidebar-section">
             <div className="sidebar-section-title">🔥 Top posts</div>
@@ -312,7 +359,6 @@ function Sidebar({ view, onView, user, artes, starred, onOpenArt, onUnstar, onOp
           </div>
         )}
 
-        {/* AUTHORS */}
         {view === 'authors' && (
           <div className="sidebar-section">
             <div className="sidebar-section-title">🏆 Por estrellas</div>
@@ -330,7 +376,6 @@ function Sidebar({ view, onView, user, artes, starred, onOpenArt, onUnstar, onOp
           </div>
         )}
 
-        {/* MY ACCOUNT */}
         {view === 'account' && user && (
           <div className="sidebar-section">
             <div className="sidebar-section-title">📌 Mis publicaciones</div>
@@ -364,15 +409,6 @@ function Sidebar({ view, onView, user, artes, starred, onOpenArt, onUnstar, onOp
 //   MAIN APP
 // ══════════════════════════════════════════════════════
 export default function App() {
-  const [editingId, setEditingId] = useState(null); // Nuevo estado
-
-  const handleEditClick = (art) => {
-    setEditingId(art.id);
-    setAscii(art.content);
-    setTags(art.tags.join(', '));
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube al formulario
-  };
-
   const [user, setUser]                       = useState(null);
   const [profile, setProfile]                 = useState({ nickname: '', hideName: false, hidePhoto: false, customPhotoUrl: '' });
   const [showLogin, setShowLogin]             = useState(false);
@@ -388,11 +424,15 @@ export default function App() {
   const [hasMore, setHasMore]                 = useState(false);
   const [selectedArt, setSelectedArt]         = useState(null);
   const [panelOpen, setPanelOpen]             = useState(false);
-  const [prevArt, setPrevArt]                 = useState(null); // for swap animation tracking
+  const [prevArt, setPrevArt]                 = useState(null);
   const [starred, setStarred]                 = useState(() => {
     try { return JSON.parse(localStorage.getItem('ithymag_starred') || '[]'); } catch { return []; }
   });
   const [toast, setToast] = useState('');
+
+  // Edit / Delete state
+  const [editingArt, setEditingArt]           = useState(null);
+  const [confirmDelete, setConfirmDelete]     = useState(null); // art a borrar
 
   const showToast = useCallback(msg => {
     setToast(msg);
@@ -415,9 +455,16 @@ export default function App() {
   useEffect(() => {
     const q = query(collection(db, 'artes'), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
     return onSnapshot(q, snap => {
-      setArtes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const newArtes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setArtes(newArtes);
       setLastDoc(snap.docs[snap.docs.length - 1]);
       setHasMore(snap.docs.length === PAGE_SIZE);
+      // Actualizar selectedArt si está abierto (para reflejar ediciones en tiempo real)
+      setSelectedArt(prev => {
+        if (!prev) return prev;
+        const updated = newArtes.find(a => a.id === prev.id);
+        return updated || prev;
+      });
     });
   }, []);
 
@@ -440,48 +487,57 @@ export default function App() {
     setHasMore(snap.docs.length === PAGE_SIZE);
   };
 
-  const handleDelete = async (id, authorId) => {
-    // Verificación básica de seguridad en el cliente
-    if (auth.currentUser?.uid !== authorId) {
-      setToast("¡No puedes borrar lo que no es tuyo! ツ");
-      return;
-    }
-
-    if (window.confirm("¿Seguro que quieres borrar este pedazo de arte?")) {
-      try {
-        await deleteDoc(doc(db, "artes", id));
-        setToast("Post eliminado. ¡Puff! 💨");
-        // Si el panel está abierto con este post, ciérralo
-        if (selectedArt?.id === id) setPanelOpen(false);
-      } catch (err) {
-        console.error(err);
-        setToast("Error al borrar... Firebase dijo que no.");
-      }
-    }
-  };
-
   const handlePost = async e => {
     e.preventDefault();
     if (!ascii.trim()) return;
-
     try {
-      if (editingId) {
-        const artRef = doc(db, 'artes', editingId);
-        await updateDoc(artRef, {
-          content: ascii,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        });
-        
-        // --- ESTO ES LO QUE CIERRA TODO ---
-        setEditingId(null); 
-        setAscii('');
-        setTags('');
-        setToast("¡Cambios guardados! ツ");
-      } else {
-        // ... tu código de addDoc para posts nuevos ...
+      await addDoc(collection(db, 'artes'), {
+        content: ascii,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        author: profile.nickname || user.displayName,
+        authorPhoto: user.photoURL || '',
+        authorHidePhoto: profile.hidePhoto,
+        authorCustomPhoto: profile.customPhotoUrl || '',
+        authorNickname: profile.nickname || '',
+        authorUid: user.uid,
+        stars: 0, starredBy: [],
+        createdAt: serverTimestamp(),
+      });
+      setAscii(''); setTags('');
+      showToast('¡ASCII publicado! 🎉');
+    } catch (e) { alert('Error: ' + e.message); }
+  };
+
+  // ── Editar post ────────────────────────────────────
+  const handleEdit = art => {
+    setEditingArt(art);
+  };
+
+  const handleEditSave = () => {
+    setEditingArt(null);
+    showToast('✅ ASCII actualizado!');
+  };
+
+  // ── Borrar post ────────────────────────────────────
+  const handleDelete = art => {
+    setConfirmDelete(art);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteDoc(doc(db, 'artes', confirmDelete.id));
+      // Si el panel está abierto con ese art, cerrarlo
+      if (selectedArt?.id === confirmDelete.id) {
+        setPanelOpen(false);
+        setTimeout(() => setSelectedArt(null), 600);
+        history.pushState('', document.title, location.pathname);
       }
-    } catch (err) {
-      setToast("Error al guardar");
+      showToast('🗑️ Post borrado');
+    } catch (e) {
+      alert('Error al borrar: ' + e.message);
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -510,9 +566,8 @@ export default function App() {
   const handleCopy  = c  => { navigator.clipboard.writeText(c); showToast('¡Copiado! 📋'); };
   const handleShare = art => { navigator.clipboard.writeText(`${location.origin}${location.pathname}#post-${art.id}`); showToast('🔗 Link copiado!'); };
 
-  // Open panel with push animation
   const openPanel = art => {
-    if (selectedArt?.id === art.id && panelOpen) return; // already open same
+    if (selectedArt?.id === art.id && panelOpen) return;
     setPrevArt(selectedArt);
     setSelectedArt(art);
     setPanelOpen(true);
@@ -525,7 +580,6 @@ export default function App() {
     history.pushState('', document.title, location.pathname);
   };
 
-  // Settings change handler that also saves to cookie
   const handleSettingsChange = newSettings => {
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -598,47 +652,20 @@ export default function App() {
           <main className="main-content">
             <div className="hero">
               <h1 className="hero-title">iThyMag</h1>
-              <p className="hero-sub">                   The HappY MAc Gallery </p>
-              <p className="hero-sub"> Ascii library </p>
+              <p className="hero-sub">The HappY MAc Gallery — ASCII con Unicode real 🖥️</p>
             </div>
 
             {user ? (
               <form className="post-form" onSubmit={handlePost}>
-                  <span className="form-label">{editingId ? 'Editando su obra' : 'Nuevo ASCII'}</span>
-                  <textarea 
-                    className="post-textarea" 
-                    rows={9} 
-                    spellCheck={false}
-                    placeholder={`  _________\n | _______ |\n | |' ⅃ '| |\n | |  ◡  | |\n | ------- |\n |      _  |\n -----------\n  |       |\n  ---------`}
-                    value={ascii} 
-                    onChange={e => setAscii(e.target.value)} 
-                  />
-                  <div className="form-row">
-                    <input 
-                      className="tags-input" 
-                      placeholder="Tags opcionales: retro, apple, art"
-                      value={tags} 
-                      onChange={e => setTags(e.target.value)} 
-                    />
-                    
-                    {/* AQUÍ VAN LOS BOTONES DINÁMICOS */}
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button type="submit" className="submit-btn">
-                        {editingId ? 'Guardar Cambios' : 'Publicar'}
-                      </button>
-                      
-                      {editingId && (
-                        <button 
-                          type="button" // Importante que sea type="button" para que no haga submit
-                          onClick={() => { setEditingId(null); setAscii(''); setTags(''); }} 
-                          className="cancel-btn"
-                          style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                <span className="form-label">Nuevo ASCII</span>
+                <textarea className="post-textarea" rows={9} spellCheck={false}
+                  placeholder={`  _________\n | _______ |\n | |' ⅃ '| |\n | |  ◡  | |\n | ------- |\n |      _  |\n -----------\n  |       |\n  ---------`}
+                  value={ascii} onChange={e => setAscii(e.target.value)} />
+                <div className="form-row">
+                  <input className="tags-input" placeholder="Tags opcionales: retro, apple, art"
+                    value={tags} onChange={e => setTags(e.target.value)} />
+                  <button type="submit" className="submit-btn">Publicar</button>
+                </div>
               </form>
             ) : (
               <div className="empty-state">
@@ -656,19 +683,16 @@ export default function App() {
             ) : (
               <div className={`gallery${panelOpen ? ' panel-open' : ''}${settings.compactCards ? ' gallery-compact' : ''}`}>
                 {filtered.map(art => (
-                  <AsciiCard 
-                    key={art.id} 
-                    art={art}
-                    onOpen={openPanel} 
-                    onStar={handleStar}
-                    onCopy={handleCopy} 
-                    onShare={handleShare}
-                    onEdit={handleEditClick}
-                    onDelete={handleDelete} // <--- Ahora sí pasas la función
+                  <AsciiCard key={art.id} art={art}
+                    onOpen={openPanel} onStar={handleStar}
+                    onCopy={handleCopy} onShare={handleShare}
                     starred={starred.includes(art.id)}
                     settings={settings}
                     isSelected={panelOpen && selectedArt?.id === art.id}
-                    currentUser={user} // <--- Pasas el usuario para la lógica
+                    currentUser={user}
+                    currentProfile={profile}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -685,6 +709,10 @@ export default function App() {
             onClose={closePanel} onStar={handleStar}
             onCopy={handleCopy} onShare={handleShare}
             starred={selectedArt ? starred.includes(selectedArt.id) : false}
+            currentUser={user}
+            currentProfile={profile}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       </div>
@@ -699,6 +727,20 @@ export default function App() {
         <LoginModal onClose={() => setShowLogin(false)}
           onGoogle={handleGoogle} onEmailLogin={handleEmailLogin}
           onEmailRegister={handleEmailRegister} onForgot={handleForgot} />
+      )}
+
+      {/* Edit Modal */}
+      {editingArt && (
+        <EditModal art={editingArt} onSave={handleEditSave} onClose={() => setEditingArt(null)} />
+      )}
+
+      {/* Confirm Delete */}
+      {confirmDelete && (
+        <ConfirmDialog
+          msg="¿Borrar este ASCII? Esta acción no se puede deshacer 💀"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       <Toast msg={toast} />

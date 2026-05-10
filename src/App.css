@@ -1,6 +1,7 @@
 /* ================================================================
    iThyMag — App.css  ¡VIVA EL ASCII ART! 🎨
    Spring animations · Sidebar · Plasma · Settings fix
+   + Edit/Delete owner buttons ✏️🗑️
    ================================================================ */
 
 :root {
@@ -22,7 +23,6 @@
   --font-ui:       'Space Grotesk', sans-serif;
   --font-display:  'Syne', sans-serif;
 
-  /* Spring easing — bouncy but smooth */
   --spring:        cubic-bezier(0.34, 1.56, 0.64, 1);
   --spring-soft:   cubic-bezier(0.25, 1.4, 0.5, 1);
   --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
@@ -50,7 +50,6 @@ input, textarea { font-family: var(--font-ui); }
 .app { 
   min-height: 100vh; 
   position: relative; 
-  /* Quitamos overflow-x: hidden de aquí */
 }
 .app-inner { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 
@@ -177,11 +176,10 @@ input, textarea { font-family: var(--font-ui); }
 /* ════════════════════════════════════════════════════════
    BODY LAYOUT — Sidebar + Main + Detail panel (push)
    ════════════════════════════════════════════════════════ */
-/* Busca .body-layout y asegúrate de que esté así */
 .body-layout {
   display: flex;
   flex: 1;
-  align-items: flex-start; /* Esto permite que las barras "floten" */
+  align-items: flex-start;
   min-height: 0;
   position: relative;
 }
@@ -195,12 +193,10 @@ input, textarea { font-family: var(--font-ui); }
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  
-  /* Magia Sticky */
   position: sticky;
-  top: 64px; /* Pegado justo debajo del header */
-  height: calc(100vh - 64px); /* Ocupa el resto de la pantalla */
-  overflow-y: auto; /* Permite scroll interno si hay muchos elementos */
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
 }
 
 .sidebar-nav {
@@ -226,7 +222,6 @@ input, textarea { font-family: var(--font-ui); }
 .sidebar-section-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); padding: 4px 2px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
 .sidebar-empty { font-size: 0.8rem; color: var(--text-muted); padding: 8px 2px; }
 
-/* Author rows in sidebar */
 .author-row { display: flex; align-items: center; gap: 8px; padding: 7px 6px; border-radius: 8px; transition: background 0.15s; cursor: default; }
 .author-row:hover { background: var(--surface2); }
 .author-rank { font-size: 0.7rem; color: var(--text-muted); width: 18px; text-align: center; flex-shrink: 0; }
@@ -234,7 +229,6 @@ input, textarea { font-family: var(--font-ui); }
 .author-name { font-size: 0.82rem; font-weight: 600; color: var(--accent2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .author-meta { font-size: 0.7rem; color: var(--text-muted); }
 
-/* Mini cards in sidebar */
 .mini-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 10px;
@@ -267,8 +261,6 @@ input, textarea { font-family: var(--font-ui); }
   display: flex;
   flex-direction: column;
   gap: 1.8rem;
-  /* No le pongas height fijo ni overflow aquí, 
-     deja que el body maneje el scroll principal */
 }
 
 /* ── Hero ────────────────────────────────────────────── */
@@ -328,7 +320,7 @@ input, textarea { font-family: var(--font-ui); }
 .gallery { display: flex; flex-direction: column; gap: 1.2rem; }
 
 /* ════════════════════════════════════════════════════════
-   ASCII CARD — con animación de "push" lateral
+   ASCII CARD
    ════════════════════════════════════════════════════════ */
 .ascii-card {
   background: var(--surface);
@@ -338,7 +330,6 @@ input, textarea { font-family: var(--font-ui); }
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  /* spring transition for the push effect */
   transition:
     border-color   0.25s ease,
     transform      0.55s var(--spring-soft),
@@ -354,18 +345,28 @@ input, textarea { font-family: var(--font-ui); }
   border-color: var(--border-hover);
   box-shadow: 0 8px 32px rgba(56,189,248,0.07);
 }
-/* When detail panel is open, cards shift left (handled via JS class on gallery) */
 .gallery.panel-open .ascii-card {
   transform: translateX(-18px);
 }
-/* The "selected" card pops before flying right */
 .ascii-card.is-selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(56,189,248,0.25), 0 12px 40px rgba(56,189,248,0.15);
 }
 
+/* ── Owner badge en card ─────────────────────────────── */
+.owner-badge {
+  font-size: 0.62rem;
+  background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(56,189,248,0.15));
+  border: 1px solid rgba(167,139,250,0.3);
+  color: var(--accent2);
+  padding: 2px 7px;
+  border-radius: 50px;
+  margin-left: 4px;
+  letter-spacing: 0.5px;
+}
+
 /* Card header */
-.card-author-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.card-author-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .card-author-name { font-size: 0.82rem; font-weight: 600; color: var(--accent2); }
 .card-author-date { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; }
 .star-count { font-size: 0.72rem; color: #fbbf24; margin-left: 6px; }
@@ -390,7 +391,7 @@ input, textarea { font-family: var(--font-ui); }
 .card-bottom { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .card-tags { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
 .tag { background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.7rem; padding: 2px 8px; border-radius: 50px; border: 1px solid var(--border); }
-.card-actions { display: flex; gap: 5px; }
+.card-actions { display: flex; gap: 5px; align-items: center; }
 .btn-icon {
   background: var(--surface2); border: 1px solid var(--border);
   color: var(--text-muted); width: 30px; height: 30px; border-radius: 7px;
@@ -399,6 +400,27 @@ input, textarea { font-family: var(--font-ui); }
 }
 .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.12); }
 .btn-icon.star-active { color: #fbbf24; border-color: #fbbf2460; }
+
+/* ── Botones editar / borrar en card ─────────────────── */
+.btn-edit {
+  border-color: rgba(167,139,250,0.25) !important;
+}
+.btn-edit:hover {
+  border-color: var(--accent2) !important;
+  color: var(--accent2) !important;
+  background: rgba(167,139,250,0.1) !important;
+  transform: scale(1.12) rotate(-5deg) !important;
+}
+.btn-delete {
+  border-color: rgba(239,68,68,0.25) !important;
+}
+.btn-delete:hover {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  background: rgba(239,68,68,0.1) !important;
+  transform: scale(1.12) rotate(5deg) !important;
+}
+
 .btn-copy-card {
   background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2);
   color: var(--accent); padding: 5px 12px; border-radius: 7px;
@@ -424,16 +446,15 @@ input, textarea { font-family: var(--font-ui); }
 .load-more-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.04); }
 
 /* ════════════════════════════════════════════════════════
-   DETAIL PANEL — Push layout (no overlay, no dimming)
+   DETAIL PANEL — Push layout
    ════════════════════════════════════════════════════════ */
 .detail-panel-wrap {
   width: 0;
   overflow: visible; 
   flex-shrink: 0;
   transition: width 0.55s var(--spring-soft);
-  
-  position: sticky; /* La magia */
-  top: 64px;       /* Justo debajo del header */
+  position: sticky;
+  top: 64px;
   height: calc(100vh - 64px); 
 }
 
@@ -446,7 +467,7 @@ input, textarea { font-family: var(--font-ui); }
 .detail-panel {
   width: 420px;
   height: 100%;
-  overflow-y: auto; /* Su propio scroll para ver el ASCII gigante */
+  overflow-y: auto;
   background: rgba(10,12,20,0.92);
   backdrop-filter: blur(18px);
   border-left: 1px solid var(--border);
@@ -604,6 +625,46 @@ input, textarea { font-family: var(--font-ui); }
   transition: color 0.18s, border-color 0.18s, transform 0.25s var(--spring);
 }
 .btn-panel-star:hover, .btn-panel-star.active { color: #fbbf24; border-color: #fbbf2460; transform: scale(1.15) rotate(-5deg); }
+
+/* ── Panel owner actions (editar / borrar) ───────────── */
+.panel-owner-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.btn-panel-edit {
+  flex: 1;
+  background: rgba(167,139,250,0.08);
+  border: 1px solid rgba(167,139,250,0.25);
+  color: var(--accent2);
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: background 0.18s, border-color 0.18s, transform 0.2s var(--spring);
+}
+.btn-panel-edit:hover {
+  background: rgba(167,139,250,0.18);
+  border-color: var(--accent2);
+  transform: scale(1.03);
+}
+.btn-panel-delete {
+  flex: 1;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.22);
+  color: #ef4444;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: background 0.18s, border-color 0.18s, transform 0.2s var(--spring);
+}
+.btn-panel-delete:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: #ef4444;
+  transform: scale(1.03);
+}
 
 /* ════════════════════════════════════════════════════════
    MODAL (Login / Settings)
