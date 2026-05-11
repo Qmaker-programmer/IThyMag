@@ -26,6 +26,7 @@ ui-debug.log*
 # ── SECRETOS (¡CRÍTICO! Nunca subas tus llaves) ──
 .env
 .env*.local
+src/firebaseConfig.js
 # Si usas service accounts de Firebase en local
 *-firebase-adminsdk-*.json
 
