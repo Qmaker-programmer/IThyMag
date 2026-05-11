@@ -53,24 +53,37 @@ Para que la base de datos y la autenticación funcionen, debes configurar tus pr
 3. Crea un archivo llamado src/firebaseConfig.js con el siguiente formato:
 
 ```js
-import { initializeApp } from "firebase/app";  
-import { getFirestore } from "firebase/firestore";  
+// =======================================================
+//    iThyMag — firebaseConfig.example.js
+//    Configuración de Firebase
+//    Copia esto en src/firebaseConfig.js y pon tus llaves
+// ========================================================
+
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-const firebaseConfig \= {  
-  apiKey: "TU\_API\_KEY",  
-  authDomain: "TU\_PROYECTO.firebaseapp.com",  
-  projectId: "TU\_PROYECTO",  
-  storageBucket: "TU\_PROYECTO.appspot.com",  
-  messagingSenderId: "TU\_ID",  
-  appId: "TU\_APP\_ID"  
+// Reemplaza estos valores con los de tu proyecto en Firebase Console
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "TU_ID",
+  appId: "TU_APP_ID",
+  // measurementId: "G-XXXXXXX" // Opcional: Solo si usas Google Analytics
 };
 
-const app \= initializeApp(firebaseConfig);  
-export const db \= getFirestore(app);  
-export const auth \= getAuth(app);  
-export const googleProvider \= new GoogleAuthProvider();
+const app = initializeApp(firebaseConfig);
+
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+export const googleProvider = provider;
 ```
+
+**Nota**: O usa el template de firebaseConfig.example.js,
+pon tu llaves y guardalo en src/firebaseConfig.js
 
 ### **4\. Ejecutar en modo desarrollo**
 
