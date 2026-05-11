@@ -1,4 +1,4 @@
-# **🎨 iThyMag
+# **🎨 iThyMag**
 
 **iThyMag** es una galería interactiva de ASCII Art diseñada para entusiastas de la estética retro-digital. La aplicación permite a los usuarios explorar, compartir, editar y organizar sus creaciones favoritas en un entorno visualmente impactante con efectos de plasma dinámicos.
 
@@ -17,7 +17,7 @@
 
 # Vista previa
 
-<img src="preview.png" width="300">
+<img src="preview.png" width="100%">
 
 ## **🛠️ Stack Tecnológico**
 
