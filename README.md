@@ -33,8 +33,8 @@ Sigue estos pasos para ejecutar el proyecto en tu máquina local:
 ### **1\. Clonar el repositorio**
 
 ```bash
-git clone \[https://github.com/Qmaker-programmer/IThyMag.git\](https://github.com/Qmaker-programmer/IThyMag.git)  
-cd ithymag
+git clone https://github.com/Qmaker-programmer/IThyMag.git
+cd IThyMag
 ```
 
 ### **2\. Instalar dependencias**
