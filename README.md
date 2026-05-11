@@ -1,3 +1,4 @@
+**Por favor, lea todo el README.md**
 # **🎨 iThyMag**
 
 **iThyMag** es una galería interactiva de ASCII Art diseñada para entusiastas de la estética retro-digital. La aplicación permite a los usuarios explorar, compartir, editar y organizar sus creaciones favoritas en un entorno visualmente impactante con efectos de plasma dinámicos.
@@ -102,3 +103,6 @@ El proyecto ignora automáticamente archivos innecesarios o sensibles:
 * Logs y archivos de configuración de editores (VSCode, JetBrains).
 ---
 # Creado por **Qmaker/Quack (Andres)**.
+
+**Notas**:
+* src/firebaseConfig.js - Configuración privada de Firebase (ignorado por seguridad).
