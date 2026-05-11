@@ -652,7 +652,7 @@ export default function App() {
           <main className="main-content">
             <div className="hero">
               <h1 className="hero-title">iThyMag</h1>
-              <p className="hero-sub">The HappY MAc Gallery — ASCII con Unicode real 🖥️</p>
+              <p className="hero-sub">The Happy Mac Gallery</p>
             </div>
 
             {user ? (
